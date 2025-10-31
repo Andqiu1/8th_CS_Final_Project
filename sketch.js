@@ -181,6 +181,10 @@ function draw() {
     }
   }
   
+  
+  // Draw trendline
+  drawTrendline();
+  
   pop();
   
   // Draw hover box
@@ -315,4 +319,39 @@ function drawHoverBox() {
   text('Location: ' + hoveredPoint.measure, textX, textY + lineHeight);
   text('Date: ' + hoveredPoint.date, textX, textY + lineHeight * 2);
   text('Change: ' + hoveredPoint.change.toFixed(2) + ' mm', textX, textY + lineHeight * 3);
+}
+
+function drawTrendline() {
+  if (filteredData.length < 2) return;
+  
+  // Calculate linear regression (least squares)
+  let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+  let n = filteredData.length;
+  
+  for (let i = 0; i < n; i++) {
+    sumX += i;
+    sumY += filteredData[i].change;
+    sumXY += i * filteredData[i].change;
+    sumXX += i * i;
+  }
+  
+  // Calculate slope (m) and intercept (b) for y = mx + b
+  let slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+  let intercept = (sumY - slope * sumX) / n;
+  
+  // Draw the trendline
+  let x1 = 0;
+  let y1Value = intercept;
+  let y1 = map(y1Value, minY, maxY, plotHeight, 0);
+  
+  let x2 = plotWidth;
+  let y2Value = slope * (n - 1) + intercept;
+  let y2 = map(y2Value, minY, maxY, plotHeight, 0);
+  
+  stroke(255, 100, 100, 200);
+  strokeWeight(2);
+  line(x1, y1, x2, y2);
+  
+  // Reset stroke
+  noStroke();
 }
