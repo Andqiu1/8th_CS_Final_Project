@@ -10,6 +10,7 @@ let locationDropdown;
 let searchInput;
 let allLocations = [];
 let selectedLocation = 'All Locations';
+let hoveringPointX, hoveringPointY;
 
 function preload() {
   // Load your CSV file here
@@ -171,22 +172,22 @@ function draw() {
     
     // Highlight hovered point
     if (hoveredPoint && filteredData[i].id === hoveredPoint.id) {
-      fill(255, 100, 100);
-      noStroke();
-      circle(x, y, 8);
+      hoveringPointX = x;
+      hoveringPointY=y;
     } else {
-      fill(70, 130, 180, 180);
+      fill(127.5+filteredData[i].change, 0, 127.5-filteredData[i].change, 75);
       noStroke();
       circle(x, y, 4);
     }
   }
+    // Draw trendline
   
-  
-  // Draw trendline
-  drawTrendline();
-  
+  drawTrendline()
+    // Draw hover point
+  fill(25, 25, 25);
+  noStroke();
+  circle(hoveringPointX, hoveringPointY, 8);
   pop();
-  
   // Draw hover box
   if (hoveredPoint) {
     drawHoverBox();
@@ -348,7 +349,7 @@ function drawTrendline() {
   let y2Value = slope * (n - 1) + intercept;
   let y2 = map(y2Value, minY, maxY, plotHeight, 0);
   
-  stroke(255, 100, 100, 200);
+  stroke(150, 150, 150, 200);
   strokeWeight(2);
   line(x1, y1, x2, y2);
   
