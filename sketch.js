@@ -318,7 +318,7 @@ function drawHoverBox() {
   
   text('ID: ' + hoveredPoint.id, textX, textY);
   text('Location: ' + hoveredPoint.measure, textX, textY + lineHeight);
-  text('Date: ' + hoveredPoint.date, textX, textY + lineHeight * 2);
+  text('Date: ' + hoveredPoint.date.slice(1), textX, textY + lineHeight * 2);
   text('Change: ' + hoveredPoint.change.toFixed(2) + ' mm', textX, textY + lineHeight * 3);
 }
 
