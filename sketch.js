@@ -26,12 +26,12 @@ function setup() {
 
   // Parse the CSV data
   for (let i = 0; i < table.getRowCount(); i++) {
-    let row = table.getRow(i);
+    let tRow = table.getRow(i);
     allData.push({
-      id: row.getNum('ObjectId'),
-      measure: row.getString('Measure'),
-      date: row.getString('Date'),
-      change: row.getNum('Change in Mean (mm)')
+      id: tRow.getNum('ObjectId'),
+      measure: tRow.getString('Measure'),
+      date: tRow.getString('Date'),
+      change: tRow.getNum('Change in Mean (mm)')
     });
   }
 
@@ -149,6 +149,20 @@ function calculateBounds() {
   minY -= yPadding;
   maxY += yPadding;
 }
+
+function parseDate(dateStr) {
+  // dateStr format: "D12/16/1992" - strip the 'D' and parse
+  if (dateStr.startsWith('D')) {
+    dateStr = dateStr.slice(1);
+  }
+  let parts = dateStr.split('/');
+  if (parts.length === 3) {
+    // month/day/year
+    return new Date(parseInt(parts[2]), parseInt(parts[0]) - 1, parseInt(parts[1]));
+  }
+  return null;
+}
+
 
 function draw() {
   background(255);
@@ -333,11 +347,27 @@ function drawAxes() {
   push(); translate(-50, plotHeight / 2); rotate(-HALF_PI);
   text('Change in Mean (mm)', 0, 0); pop();
   text('Data Point Index', plotWidth / 2, plotHeight + 50);
+  
+  // Draw time axis labels
+  textSize(11);
+  let numTimeLabels = 8;
+  for (let i = 0; i <= numTimeLabels; i++) {
+    let dataIndex = Math.floor(map(i, 0, numTimeLabels, 0, filteredData.length - 1));
+    if (dataIndex >= 0 && dataIndex < filteredData.length) {
+      let x = map(dataIndex, minX, maxX, 0, plotWidth);
+      let dateObj = parseDate(filteredData[dataIndex].date);
+      if (dateObj) {
+        let month = dateObj.getMonth() + 1;
+        let year = dateObj.getFullYear();
+        text(month + '/' + year, x, plotHeight + 30);
+      }
+    }
+  }
 }
 
 function drawHoverBox(pt1, pt2) {
   let boxWidth = 230;
-  let boxHeight = pt1 && pt2 ? 205 : 105;
+  let boxHeight = pt1 && pt2 ? 170 : 85;
   let boxX = mouseX + 15;
   let boxY = mouseY - 10;
 
@@ -353,21 +383,25 @@ function drawHoverBox(pt1, pt2) {
   let textY = boxY + 10;
   let lineHeight = 18;
 
-  if (pt1) {
+  if(pt1 && pt2){
     text('Graph 1 (' + selectedLocation + '):', textX, textY);
     text('ID: ' + pt1.id, textX, textY + lineHeight);
-    text('Location: ' + pt1.measure, textX, textY + lineHeight * 2);
-    text('Date: ' + pt1.date.slice(1), textX, textY + lineHeight * 3);
-    text('Change: ' + pt1.change.toFixed(2) + ' mm', textX, textY + lineHeight * 4);
-  }
-  if (pt2) {
-    let offset = pt1 ? 5.5 : 0;
+    text('Date: ' + pt1.date.slice(1), textX, textY + lineHeight * 2);
+    text('Change: ' + pt1.change.toFixed(2) + ' mm', textX, textY + lineHeight * 3);
+    let offset = pt1 ? 4.5 : 0;
     text('Graph 2 (' + selectedCompare + '):', textX, textY + lineHeight * offset);
     text('ID: ' + pt2.id, textX, textY + lineHeight * (offset + 1));
-    text('Location: ' + pt2.measure, textX, textY + lineHeight * (offset + 2));
-    text('Date: ' + pt2.date.slice(1), textX, textY + lineHeight * (offset + 3));
-    text('Change: ' + pt2.change.toFixed(2) + ' mm', textX, textY + lineHeight * (offset + 4));
+    text('Date: ' + pt2.date.slice(1), textX, textY + lineHeight * (offset + 2));
+    text('Change: ' + pt2.change.toFixed(2) + ' mm', textX, textY + lineHeight * (offset + 3));
   }
+  else if(pt1){
+    text(selectedLocation, textX, textY);
+    text('ID: ' + pt1.id, textX, textY + lineHeight);
+    text('Date: ' + pt1.date.slice(1), textX, textY + lineHeight * 2);
+    text('Change: ' + pt1.change.toFixed(2) + ' mm', textX, textY + lineHeight * 3);
+  }
+  
+  
 }
 
 function drawTrendline(data, lineColor) {
