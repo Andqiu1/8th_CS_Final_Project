@@ -10,21 +10,21 @@ let mouseInPlot = false;
 let locationDropdown, compareDropdown;
 let searchInput, compareSearchInput;
 let allLocations = [];
-let selectedLocation = 'World';  // default to World
+let selectedLocation = 'World';
 let selectedCompare = null;
 let hoveringPointX, hoveringPointY;
 let hoveringCompareX, hoveringCompareY;
+let waveOffset = 0;
 
 function preload() {
   table = loadTable('Sea_Levels_NOAA.csv', 'csv', 'header');
 }
 
 function setup() {
-  createCanvas(1200, 700);
-  plotWidth = width - margin.left - margin.right;
+  createCanvas(1300, 700);
+  plotWidth = width - 100 - margin.left - margin.right;
   plotHeight = height - margin.top - margin.bottom;
 
-  // Parse the CSV data
   for (let i = 0; i < table.getRowCount(); i++) {
     let tRow = table.getRow(i);
     allData.push({
@@ -43,41 +43,35 @@ function setup() {
     'Sea Okhotsk', 'South China', 'Southern Ocean', 'Tropics', 'Yellow Sea'
   ]);
 
-  // Remove "World", sort, then add "World" at front
   let locationsArray = Array.from(locationSet);
   locationsArray = locationsArray.filter(l => l.toLowerCase() !== "world");
   locationsArray = locationsArray.sort();
   allLocations = ["World", ...locationsArray];
 
-  // Search input
   searchInput = createInput('');
   searchInput.position(20, 20);
   searchInput.size(200);
   searchInput.attribute('placeholder', 'Search location...');
   searchInput.input(filterLocations);
 
-  // Location dropdown
   locationDropdown = createSelect();
   locationDropdown.position(230, 20);
   locationDropdown.size(250);
   updateDropdownOptions(locationDropdown, allLocations, selectedLocation);
   locationDropdown.changed(updateLocation);
 
-  // Compare search input
   compareSearchInput = createInput('');
   compareSearchInput.position(500, 20);
   compareSearchInput.size(200);
   compareSearchInput.attribute('placeholder', 'Search comparison...');
   compareSearchInput.input(filterCompareLocations);
 
-  // Compare dropdown
   compareDropdown = createSelect();
   compareDropdown.position(710, 20);
   compareDropdown.size(250);
   updateDropdownOptions(compareDropdown, ['None', ...allLocations.filter(l => l !== selectedLocation)], selectedCompare || 'None');
   compareDropdown.changed(updateCompare);
 
-  // Initialize with "World" data
   filteredData = allData.filter(d => d.measure === selectedLocation);
   compareData = [];
   calculateBounds();
@@ -101,7 +95,6 @@ function updateDropdownOptions(dropdown, locations, selected) {
   for (let loc of locations) {
     dropdown.option(loc);
   }
-  // Set selected value if it exists in filtered list
   if (locations.includes(selected)) {
     dropdown.value(selected);
   } else if (dropdown === compareDropdown && locations.length > 0) {
@@ -111,11 +104,8 @@ function updateDropdownOptions(dropdown, locations, selected) {
 
 function updateLocation() {
   selectedLocation = locationDropdown.value();
-
-  // Update compare dropdown to not show the same location
   let compareOptions = ['None', ...allLocations.filter(l => l !== selectedLocation)];
   updateDropdownOptions(compareDropdown, compareOptions, selectedCompare || 'None');
-
   filteredData = allData.filter(d => d.measure === selectedLocation);
   calculateBounds();
 }
@@ -151,18 +141,15 @@ function calculateBounds() {
 }
 
 function parseDate(dateStr) {
-  // dateStr format: "D12/16/1992" - strip the 'D' and parse
   if (dateStr.startsWith('D')) {
     dateStr = dateStr.slice(1);
   }
   let parts = dateStr.split('/');
   if (parts.length === 3) {
-    // month/day/year
     return new Date(parseInt(parts[2]), parseInt(parts[0]) - 1, parseInt(parts[1]));
   }
   return null;
 }
-
 
 function draw() {
   background(255);
@@ -216,12 +203,10 @@ function draw() {
     drawingContext.setLineDash([]);
   }
 
-  // ---- MAIN DATASET ----
   for (let i = 0; i < filteredData.length; i++) {
     let x = map(i, minX, maxX, 0, plotWidth);
     let y = map(filteredData[i].change, minY, maxY, plotHeight, 0);
 
-    // If comparing, use explicit color; else use original style
     if (compareData.length > 0) {
       if (hoveredPoint && filteredData[i].id === hoveredPoint.id) {
         hoveringPointX = x;
@@ -232,7 +217,6 @@ function draw() {
         circle(x, y, 4);
       }
     } else {
-      // Original color mapping, varies by 'change'
       if (hoveredPoint && filteredData[i].id === hoveredPoint.id) {
         hoveringPointX = x;
         hoveringPointY = y;
@@ -244,7 +228,6 @@ function draw() {
     }
   }
 
-  // ---- COMPARE DATASET ----
   if (compareData.length > 0) {
     for (let i = 0; i < compareData.length; i++) {
       let x = map(i, minX, maxX, 0, plotWidth);
@@ -278,6 +261,9 @@ function draw() {
 
   pop();
 
+  // Draw water animation on the right side
+  drawWaterAnimation();
+
   if (hoveredPoint || hoveredComparePoint) {
     drawHoverBox(hoveredPoint, hoveredComparePoint);
   }
@@ -297,6 +283,130 @@ function draw() {
   fill(100);
   let countText = filteredData.length + (compareData.length > 0 ? (' & ' + compareData.length) : '') + ' data points';
   text(countText, width / 2, margin.top / 2 + 35);
+
+  waveOffset += 0.05;
+}
+
+function drawWaterAnimation() {
+  let waterWidth = 120;
+  let containerHeight = plotHeight;
+  let containerY = margin.top;
+
+  // Use hovered point if available, otherwise use average
+  let mainChange = 0;
+  if (hoveredPoint) {
+    mainChange = hoveredPoint.change;
+  } else if (filteredData.length > 0) {
+    mainChange = filteredData.reduce((sum, d) => sum + d.change, 0) / filteredData.length;
+  }
+
+  if (compareData.length > 0) {
+    // When comparing, stack vertically
+    let waterX = width - 150;
+    
+    // Top container - main dataset
+    let topContainerY = containerY;
+    let topContainerHeight = containerHeight / 2 - 20;
+    
+    stroke(100);
+    strokeWeight(2);
+    noFill();
+    rect(waterX, topContainerY, waterWidth, topContainerHeight);
+    
+    let waterY = map(mainChange, minY, maxY, topContainerY + topContainerHeight, topContainerY);
+    
+    push();
+    fill(255, 0, 0, 150);
+    noStroke();
+    
+    beginShape();
+    for (let x = waterX; x <= waterX + waterWidth; x += 5) {
+      let waveY = waterY + sin(waveOffset + x * 0.05) * 8;
+      vertex(x, waveY);
+    }
+    vertex(waterX + waterWidth, topContainerY + topContainerHeight);
+    vertex(waterX, topContainerY + topContainerHeight);
+    endShape(CLOSE);
+    pop();
+    
+    fill(0);
+    noStroke();
+    textAlign(CENTER, CENTER);
+    textSize(10);
+    text(selectedLocation, waterX + waterWidth / 2, topContainerY - 10);
+    text(mainChange.toFixed(1) + ' mm', waterX + waterWidth / 2, waterY - 15);
+    
+    // Bottom container - compare dataset
+    let compareChange = 0;
+    if (hoveredComparePoint) {
+      compareChange = hoveredComparePoint.change;
+    } else {
+      compareChange = compareData.reduce((sum, d) => sum + d.change, 0) / compareData.length;
+    }
+    
+    let bottomContainerY = containerY + containerHeight / 2 + 20;
+    let bottomContainerHeight = containerHeight / 2 - 20;
+    
+    stroke(100);
+    strokeWeight(2);
+    noFill();
+    rect(waterX, bottomContainerY, waterWidth, bottomContainerHeight);
+    
+    let compareWaterY = map(compareChange, minY, maxY, bottomContainerY + bottomContainerHeight, bottomContainerY);
+    
+    push();
+    fill(20, 200, 20, 150);
+    noStroke();
+    
+    beginShape();
+    for (let x = waterX; x <= waterX + waterWidth; x += 5) {
+      let waveY = compareWaterY + sin(waveOffset + x * 0.05 + PI) * 8;
+      vertex(x, waveY);
+    }
+    vertex(waterX + waterWidth, bottomContainerY + bottomContainerHeight);
+    vertex(waterX, bottomContainerY + bottomContainerHeight);
+    endShape(CLOSE);
+    pop();
+    
+    fill(0);
+    noStroke();
+    textAlign(CENTER, CENTER);
+    textSize(10);
+    text(selectedCompare, waterX + waterWidth / 2, bottomContainerY - 10);
+    text(compareChange.toFixed(1) + ' mm', waterX + waterWidth / 2, compareWaterY - 15);
+    
+  } else {
+    // Single container when not comparing
+    let waterX = width - 150;
+    
+    stroke(100);
+    strokeWeight(2);
+    noFill();
+    rect(waterX, containerY, waterWidth, containerHeight);
+    
+    let waterY = map(mainChange, minY, maxY, containerY + containerHeight, containerY);
+    
+    push();
+    fill(30, 144, 255, 150);
+    noStroke();
+    
+    beginShape();
+    for (let x = waterX; x <= waterX + waterWidth; x += 5) {
+      let waveY = waterY + sin(waveOffset + x * 0.05) * 8;
+      vertex(x, waveY);
+    }
+    vertex(waterX + waterWidth, containerY + containerHeight);
+    vertex(waterX, containerY + containerHeight);
+    endShape(CLOSE);
+    pop();
+    
+    fill(0);
+    noStroke();
+    textAlign(CENTER, CENTER);
+    textSize(10);
+    text(selectedLocation, waterX + waterWidth / 2, containerY - 10);
+    text(mainChange.toFixed(1) + ' mm', waterX + waterWidth / 2, waterY - 15);
+  }
 }
 
 function drawAxes() {
@@ -348,7 +458,6 @@ function drawAxes() {
   text('Change in Mean (mm)', 0, 0); pop();
   text('Data Point Index', plotWidth / 2, plotHeight + 50);
   
-  // Draw time axis labels
   textSize(11);
   let numTimeLabels = 8;
   for (let i = 0; i <= numTimeLabels; i++) {
@@ -371,7 +480,7 @@ function drawHoverBox(pt1, pt2) {
   let boxX = mouseX + 15;
   let boxY = mouseY - 10;
 
-  if (boxX + boxWidth > width - 10) boxX = mouseX - boxWidth - 15;
+  if (boxX + boxWidth > width - 160) boxX = mouseX - boxWidth - 15;
   if (boxY + boxHeight > height - 10) boxY = height - boxHeight - 10;
   if (boxY < 10) boxY = 10;
 
@@ -400,8 +509,6 @@ function drawHoverBox(pt1, pt2) {
     text('Date: ' + pt1.date.slice(1), textX, textY + lineHeight * 2);
     text('Change: ' + pt1.change.toFixed(2) + ' mm', textX, textY + lineHeight * 3);
   }
-  
-  
 }
 
 function drawTrendline(data, lineColor) {
