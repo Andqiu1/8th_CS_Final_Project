@@ -337,7 +337,7 @@ function drawAxes() {
 
 function drawHoverBox(pt1, pt2) {
   let boxWidth = 230;
-  let boxHeight = pt1 && pt2 ? 170 : 85;
+  let boxHeight = pt1 && pt2 ? 205 : 105;
   let boxX = mouseX + 15;
   let boxY = mouseY - 10;
 
@@ -353,25 +353,21 @@ function drawHoverBox(pt1, pt2) {
   let textY = boxY + 10;
   let lineHeight = 18;
 
-  if(pt1 && pt2){
+  if (pt1) {
     text('Graph 1 (' + selectedLocation + '):', textX, textY);
     text('ID: ' + pt1.id, textX, textY + lineHeight);
-    text('Date: ' + pt1.date.slice(1), textX, textY + lineHeight * 2);
-    text('Change: ' + pt1.change.toFixed(2) + ' mm', textX, textY + lineHeight * 3);
-    let offset = pt1 ? 4.5 : 0;
+    text('Location: ' + pt1.measure, textX, textY + lineHeight * 2);
+    text('Date: ' + pt1.date.slice(1), textX, textY + lineHeight * 3);
+    text('Change: ' + pt1.change.toFixed(2) + ' mm', textX, textY + lineHeight * 4);
+  }
+  if (pt2) {
+    let offset = pt1 ? 5.5 : 0;
     text('Graph 2 (' + selectedCompare + '):', textX, textY + lineHeight * offset);
     text('ID: ' + pt2.id, textX, textY + lineHeight * (offset + 1));
-    text('Date: ' + pt2.date.slice(1), textX, textY + lineHeight * (offset + 2));
-    text('Change: ' + pt2.change.toFixed(2) + ' mm', textX, textY + lineHeight * (offset + 3));
+    text('Location: ' + pt2.measure, textX, textY + lineHeight * (offset + 2));
+    text('Date: ' + pt2.date.slice(1), textX, textY + lineHeight * (offset + 3));
+    text('Change: ' + pt2.change.toFixed(2) + ' mm', textX, textY + lineHeight * (offset + 4));
   }
-  else if(pt1){
-    text(selectedLocation, textX, textY);
-    text('ID: ' + pt1.id, textX, textY + lineHeight);
-    text('Date: ' + pt1.date.slice(1), textX, textY + lineHeight * 2);
-    text('Change: ' + pt1.change.toFixed(2) + ' mm', textX, textY + lineHeight * 3);
-  }
-  
-  
 }
 
 function drawTrendline(data, lineColor) {
