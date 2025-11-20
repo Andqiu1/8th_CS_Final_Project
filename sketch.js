@@ -15,6 +15,9 @@ let selectedCompare = null;
 let hoveringPointX, hoveringPointY;
 let hoveringCompareX, hoveringCompareY;
 let waveOffset = 0;
+let isPlaying = false;
+let playIndex = 0;
+let playButton;
 
 function preload() {
   table = loadTable('Sea_Levels_NOAA.csv', 'csv', 'header');
@@ -72,9 +75,22 @@ function setup() {
   updateDropdownOptions(compareDropdown, ['None', ...allLocations.filter(l => l !== selectedLocation)], selectedCompare || 'None');
   compareDropdown.changed(updateCompare);
 
+  playButton = createButton('Play');
+  playButton.position(980, 20);
+  playButton.size(80, 30);
+  playButton.mousePressed(togglePlay);
+
   filteredData = allData.filter(d => d.measure === selectedLocation);
   compareData = [];
   calculateBounds();
+}
+
+function togglePlay() {
+  isPlaying = !isPlaying;
+  playButton.html(isPlaying ? 'Pause' : 'Play');
+  if (isPlaying) {
+    playIndex = 0;
+  }
 }
 
 function filterLocations() {
@@ -186,7 +202,27 @@ function draw() {
   hoveringCompareX = undefined;
   hoveringCompareY = undefined;
 
-  if (mouseInPlot) {
+  if (isPlaying) {
+    let xIndex = Math.floor(playIndex);
+    xIndex = constrain(xIndex, 0, maxX);
+
+    let mainPoint = xIndex < filteredData.length ? filteredData[xIndex] : null;
+    let comparePoint = (compareData.length > 0 && xIndex < compareData.length) ? compareData[xIndex] : null;
+    hoveredPoint = mainPoint;
+    hoveredComparePoint = comparePoint;
+
+    let lineX = map(xIndex, minX, maxX, 0, plotWidth);
+    stroke(100, 100, 255, 150);
+    strokeWeight(1);
+    drawingContext.setLineDash([5, 5]);
+    line(lineX, 0, lineX, plotHeight);
+    drawingContext.setLineDash([]);
+
+    playIndex += 0.5;
+    if (playIndex > maxX) {
+      playIndex = 0;
+    }
+  } else if (mouseInPlot) {
     let xIndex = Math.round(map(mx, 0, plotWidth, minX, maxX));
     xIndex = constrain(xIndex, 0, maxX);
 
