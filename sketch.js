@@ -17,7 +17,7 @@ let hoveringCompareX, hoveringCompareY;
 let waveOffset = 0;
 let isPlaying = false;
 let playIndex = 0;
-let playButton;
+let playButton, prevButton, nextButton, prev5Button, next5Button, prev20Button, next20Button;
 
 function preload() {
   table = loadTable('Sea_Levels_NOAA.csv', 'csv', 'header');
@@ -75,10 +75,40 @@ function setup() {
   updateDropdownOptions(compareDropdown, ['None', ...allLocations.filter(l => l !== selectedLocation)], selectedCompare || 'None');
   compareDropdown.changed(updateCompare);
 
+  prev20Button = createButton('<<<');
+  prev20Button.position(980-15, 20);
+  prev20Button.size(45, 30);
+  prev20Button.mousePressed(() => { playIndex = max(0, playIndex - 20); });
+
+  prev5Button = createButton('<<');
+  prev5Button.position(1030-15, 20);
+  prev5Button.size(40, 30);
+  prev5Button.mousePressed(() => { playIndex = max(0, playIndex - 5); });
+
+  prevButton = createButton('<');
+  prevButton.position(1075-15, 20);
+  prevButton.size(35, 30);
+  prevButton.mousePressed(() => { playIndex = max(0, playIndex - 1); });
+
   playButton = createButton('Play');
-  playButton.position(980, 20);
-  playButton.size(80, 30);
+  playButton.position(1115-15, 20);
+  playButton.size(60, 30);
   playButton.mousePressed(togglePlay);
+
+  nextButton = createButton('>');
+  nextButton.position(1180-15, 20);
+  nextButton.size(35, 30);
+  nextButton.mousePressed(() => { playIndex = min(maxX, playIndex + 1); });
+
+  next5Button = createButton('>>');
+  next5Button.position(1220-15, 20);
+  next5Button.size(40, 30);
+  next5Button.mousePressed(() => { playIndex = min(maxX, playIndex + 5); });
+
+  next20Button = createButton('>>>');
+  next20Button.position(1265-15, 20);
+  next20Button.size(45, 30);
+  next20Button.mousePressed(() => { playIndex = min(maxX, playIndex + 20); });
 
   filteredData = allData.filter(d => d.measure === selectedLocation);
   compareData = [];
@@ -88,9 +118,6 @@ function setup() {
 function togglePlay() {
   isPlaying = !isPlaying;
   playButton.html(isPlaying ? 'Pause' : 'Play');
-  if (isPlaying) {
-    playIndex = 0;
-  }
 }
 
 function filterLocations() {
@@ -222,8 +249,25 @@ function draw() {
     if (playIndex > maxX) {
       playIndex = 0;
     }
-  } else if (mouseInPlot) {
+  } else if (mouseInPlot && mouseIsPressed) {
     let xIndex = Math.round(map(mx, 0, plotWidth, minX, maxX));
+    xIndex = constrain(xIndex, 0, maxX);
+
+    playIndex = xIndex;
+
+    let mainPoint = xIndex < filteredData.length ? filteredData[xIndex] : null;
+    let comparePoint = (compareData.length > 0 && xIndex < compareData.length) ? compareData[xIndex] : null;
+    hoveredPoint = mainPoint;
+    hoveredComparePoint = comparePoint;
+
+    let lineX = map(xIndex, minX, maxX, 0, plotWidth);
+    stroke(100, 100, 255, 150);
+    strokeWeight(1);
+    drawingContext.setLineDash([5, 5]);
+    line(lineX, 0, lineX, plotHeight);
+    drawingContext.setLineDash([]);
+  } else if (playIndex >= 0) {
+    let xIndex = Math.floor(playIndex);
     xIndex = constrain(xIndex, 0, maxX);
 
     let mainPoint = xIndex < filteredData.length ? filteredData[xIndex] : null;
@@ -300,7 +344,19 @@ function draw() {
   // Draw water animation on the right side
   drawWaterAnimation();
 
-  if (hoveredPoint || hoveredComparePoint) {
+  // Show hover box if: playing, clicking/dragging, or mouse near the line when paused
+  let showHoverBox = false;
+  if (isPlaying || (mouseIsPressed)) {
+    showHoverBox = true;
+  } else if (!isPlaying && playIndex >= 0) {
+    // Check if mouse is near the line position
+    let lineX = map(Math.floor(playIndex), minX, maxX, 0, plotWidth) + margin.left;
+    if (abs(mouseX - lineX) < 15 && mouseInPlot) {
+      showHoverBox = true;
+    }
+  }
+
+  if ((hoveredPoint || hoveredComparePoint) && showHoverBox) {
     drawHoverBox(hoveredPoint, hoveredComparePoint);
   }
 
