@@ -24,7 +24,7 @@ function preload() {
 }
 
 function setup() {
-  createCanvas(1300, 700);
+  createCanvas(1000, 700);
   plotWidth = width - 100 - margin.left - margin.right;
   plotHeight = height - margin.top - margin.bottom;
 
@@ -51,63 +51,51 @@ function setup() {
   locationsArray = locationsArray.sort();
   allLocations = ["World", ...locationsArray];
 
-  searchInput = createInput('');
-  searchInput.position(20, 20);
-  searchInput.size(200);
-  searchInput.attribute('placeholder', 'Search location...');
-  searchInput.input(filterLocations);
-
   locationDropdown = createSelect();
-  locationDropdown.position(230, 20);
-  locationDropdown.size(250);
+  locationDropdown.position(20, 20);
+  locationDropdown.size(180);
   updateDropdownOptions(locationDropdown, allLocations, selectedLocation);
   locationDropdown.changed(updateLocation);
 
-  compareSearchInput = createInput('');
-  compareSearchInput.position(500, 20);
-  compareSearchInput.size(200);
-  compareSearchInput.attribute('placeholder', 'Search comparison...');
-  compareSearchInput.input(filterCompareLocations);
-
   compareDropdown = createSelect();
-  compareDropdown.position(710, 20);
-  compareDropdown.size(250);
+  compareDropdown.position(210, 20);
+  compareDropdown.size(180);
   updateDropdownOptions(compareDropdown, ['None', ...allLocations.filter(l => l !== selectedLocation)], selectedCompare || 'None');
   compareDropdown.changed(updateCompare);
 
   prev20Button = createButton('<<<');
-  prev20Button.position(980-15, 20);
-  prev20Button.size(45, 30);
+  prev20Button.position(400, 20);
+  prev20Button.size(40, 30);
   prev20Button.mousePressed(() => { playIndex = max(0, playIndex - 20); });
 
   prev5Button = createButton('<<');
-  prev5Button.position(1030-15, 20);
-  prev5Button.size(40, 30);
+  prev5Button.position(445, 20);
+  prev5Button.size(35, 30);
   prev5Button.mousePressed(() => { playIndex = max(0, playIndex - 5); });
 
   prevButton = createButton('<');
-  prevButton.position(1075-15, 20);
-  prevButton.size(35, 30);
+  prevButton.position(485, 20);
+  prevButton.size(30, 30);
   prevButton.mousePressed(() => { playIndex = max(0, playIndex - 1); });
 
   playButton = createButton('Play');
-  playButton.position(1115-15, 20);
-  playButton.size(60, 30);
+  playButton.position(520, 20);
+  playButton.size(55, 30);
   playButton.mousePressed(togglePlay);
 
   nextButton = createButton('>');
-  nextButton.position(1180-15, 20);
-  nextButton.size(35, 30);
+  nextButton.position(580, 20);
+  nextButton.size(30, 30);
   nextButton.mousePressed(() => { playIndex = min(maxX, playIndex + 1); });
 
   next5Button = createButton('>>');
-  next5Button.position(1220-15, 20);
-  next5Button.size(40, 30);
+  next5Button.position(615, 20);
+  next5Button.size(35, 30);
   next5Button.mousePressed(() => { playIndex = min(maxX, playIndex + 5); });
 
   next20Button = createButton('>>>');
-  next20Button.position(1265-15, 20);
-  next20Button.size(45, 30);
+  next20Button.position(655, 20);
+  next20Button.size(40, 30);
   next20Button.mousePressed(() => { playIndex = min(maxX, playIndex + 20); });
 
   filteredData = allData.filter(d => d.measure === selectedLocation);
@@ -121,16 +109,11 @@ function togglePlay() {
 }
 
 function filterLocations() {
-  let searchTerm = searchInput.value().toLowerCase();
-  let filtered = allLocations.filter(loc => loc.toLowerCase().includes(searchTerm));
-  updateDropdownOptions(locationDropdown, filtered, selectedLocation);
+  // Function removed - no longer needed
 }
 
 function filterCompareLocations() {
-  let searchTerm = compareSearchInput.value().toLowerCase();
-  let filtered = ['None', ...allLocations.filter(loc =>
-    loc.toLowerCase().includes(searchTerm) && loc !== selectedLocation)];
-  updateDropdownOptions(compareDropdown, filtered, selectedCompare || 'None');
+  // Function removed - no longer needed
 }
 
 function updateDropdownOptions(dropdown, locations, selected) {
@@ -346,7 +329,7 @@ function draw() {
 
   // Show hover box if: playing, clicking/dragging, or mouse near the line when paused
   let showHoverBox = false;
-  if (isPlaying || (mouseIsPressed)) {
+  if (isPlaying || mouseIsPressed) {
     showHoverBox = true;
   } else if (!isPlaying && playIndex >= 0) {
     // Check if mouse is near the line position
@@ -369,18 +352,18 @@ function draw() {
   if (compareData.length > 0 && selectedCompare && selectedCompare !== 'None') {
     titleText += ' vs ' + selectedCompare;
   }
-  text(titleText, width / 2, margin.top / 2 + 10);
+  text(titleText, width / 2, margin.top / 2 + 20);
 
   textSize(12);
   fill(100);
   let countText = filteredData.length + (compareData.length > 0 ? (' & ' + compareData.length) : '') + ' data points';
-  text(countText, width / 2, margin.top / 2 + 35);
+  text(countText, width / 2, margin.top / 2 + 40);
 
   waveOffset += 0.05;
 }
 
 function drawWaterAnimation() {
-  let waterWidth = 120;
+  let waterWidth = 100;
   let containerHeight = plotHeight;
   let containerY = margin.top;
 
@@ -394,7 +377,7 @@ function drawWaterAnimation() {
 
   if (compareData.length > 0) {
     // When comparing, stack vertically
-    let waterX = width - 150;
+    let waterX = width - 120;
     
     // Top container - main dataset
     let topContainerY = containerY;
@@ -424,7 +407,7 @@ function drawWaterAnimation() {
     fill(0);
     noStroke();
     textAlign(CENTER, CENTER);
-    textSize(10);
+    textSize(9);
     text(selectedLocation, waterX + waterWidth / 2, topContainerY - 10);
     text(mainChange.toFixed(1) + ' mm', waterX + waterWidth / 2, waterY - 15);
     
@@ -463,13 +446,13 @@ function drawWaterAnimation() {
     fill(0);
     noStroke();
     textAlign(CENTER, CENTER);
-    textSize(10);
+    textSize(9);
     text(selectedCompare, waterX + waterWidth / 2, bottomContainerY - 10);
     text(compareChange.toFixed(1) + ' mm', waterX + waterWidth / 2, compareWaterY - 15);
     
   } else {
     // Single container when not comparing
-    let waterX = width - 150;
+    let waterX = width - 120;
     
     stroke(100);
     strokeWeight(2);
@@ -495,7 +478,7 @@ function drawWaterAnimation() {
     fill(0);
     noStroke();
     textAlign(CENTER, CENTER);
-    textSize(10);
+    textSize(9);
     text(selectedLocation, waterX + waterWidth / 2, containerY - 10);
     text(mainChange.toFixed(1) + ' mm', waterX + waterWidth / 2, waterY - 15);
   }
@@ -572,7 +555,7 @@ function drawHoverBox(pt1, pt2) {
   let boxX = mouseX + 15;
   let boxY = mouseY - 10;
 
-  if (boxX + boxWidth > width - 160) boxX = mouseX - boxWidth - 15;
+  if (boxX + boxWidth > width - 130) boxX = mouseX - boxWidth - 15;
   if (boxY + boxHeight > height - 10) boxY = height - boxHeight - 10;
   if (boxY < 10) boxY = 10;
 
